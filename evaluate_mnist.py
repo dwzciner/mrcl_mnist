@@ -85,7 +85,7 @@ def main():
     else:
         device = torch.device('cpu')
 
-    config = mf.ModelFactory.get_model("na", args['dataset'], output_dimension=1000)
+    config = mf.ModelFactory.get_model("na", args['dataset'], output_dimension=10)
 
     maml = load_model(args, config)
     maml = maml.to(device)
