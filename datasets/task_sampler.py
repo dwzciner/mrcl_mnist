@@ -384,10 +384,79 @@ class SampleOmni:
 
         return trainset
 
-# import numpy as np
-# import copy
-# import torch
-# import torch.utils.data as data
+class SVHNSampler:
+    def __init__(self, tasks, trainset, testset):
+        self.tasks = tasks
+        self.task_sampler = SampleSVHN(trainset, testset)
+        self.task_sampler.add_complete_iterator(list(range(0, int(len(self.tasks) / 2))))
+
+    def get_complete_iterator(self):
+        return self.task_sampler.complete_iterator
+
+    def get_another_complete_iterator(self):
+        return self.task_sampler.another_complete_iterator
+
+    def sample_random(self):
+        return self.task_sampler.get([np.random.choice(self.tasks)])
+
+    def sample_task(self, t, train=True):
+        return self.task_sampler.get(t, train)
+
+    def sample_tasks(self, t, train=False):
+        dataset = self.task_sampler.get_task_trainset(t, train)
+        train_iterator = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=1)
+        return train_iterator
+
+
+class SampleSVHN:
+    def __init__(self, trainset, testset):
+        self.task_iterators = {}
+        self.trainset = trainset
+        self.testset = testset
+        self.test_iterators = {}
+
+    def add_complete_iterator(self, tasks):
+        dataset = self.get_task_trainset(tasks, train=True)
+        train_iterator = torch.utils.data.DataLoader(dataset, batch_size=15, shuffle=True, num_workers=1)
+        self.complete_iterator = train_iterator
+
+        train_iterator2 = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=1)
+        self.another_complete_iterator = train_iterator2
+
+    def add_task_iterator(self, task, train):
+        dataset = self.get_task_trainset([task], train)
+        train_iterator = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=1)
+        self.task_iterators[task] = train_iterator
+        print(f"Task {task} has been added to the list")
+        return train_iterator
+
+    def get(self, tasks, train=True):
+        for task in tasks:
+            if train:
+                if task in self.task_iterators:
+                    return self.task_iterators[task]
+                else:
+                    return self.add_task_iterator(task, True)
+            else:
+                if task in self.test_iterators:
+                    return self.test_iterators[task]
+                else:
+                    return self.add_task_iterator(task, False)
+
+    def get_task_trainset(self, task, train=True):
+        dataset = copy.deepcopy(self.trainset if train else self.testset)
+
+        # SVHN 使用 labels 作为类别
+        class_labels = np.array(dataset.labels)
+        indices = np.isin(class_labels, task)
+        indices = np.nonzero(indices)[0]
+
+        # 过滤数据
+        dataset.data = dataset.data[indices]
+        dataset.labels = dataset.labels[indices]
+
+        return dataset
+
 
 class SampleMNIST:
     def __init__(self, trainset, testset):

@@ -142,18 +142,18 @@ def main():
 
             classes_to_keep = np.random.choice(list(range(10)), total_classes, replace=False)
 
-            dataset = utils.remove_classes_omni(mnist_train, classes_to_keep)
+            dataset = utils.remove_classes_mnist(mnist_train, classes_to_keep)
 
             iterator_sorted = torch.utils.data.DataLoader(
                 utils.iterator_sorter_omni(dataset, False, classes=no_of_classes_schedule),
                 batch_size=1,
                 shuffle=args['iid'], num_workers=2)
 
-            dataset = utils.remove_classes_omni(mnist_test, classes_to_keep)
+            dataset = utils.remove_classes_mnist(mnist_test, classes_to_keep)
             iterator_test = torch.utils.data.DataLoader(dataset, batch_size=32,
                                                         shuffle=False, num_workers=1)
 
-            dataset = utils.remove_classes_omni(mnist_train, classes_to_keep)
+            dataset = utils.remove_classes_mnist(mnist_train, classes_to_keep)
             iterator_train = torch.utils.data.DataLoader(dataset, batch_size=32,
                                                          shuffle=False, num_workers=1)
 

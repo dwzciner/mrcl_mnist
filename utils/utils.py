@@ -183,6 +183,39 @@ def remove_classes_omni(trainset, to_keep):
     return trainset
 
 
+
+def remove_classes_mnist(trainset, to_keep):
+    trainset = copy.deepcopy(trainset)
+
+    # MNIST 的 targets 是 NumPy 数组
+    trainset.targets = np.array(trainset.targets)
+
+    # 找到需要保留的类别索引
+    indices = np.isin(trainset.targets, to_keep)
+    indices = np.nonzero(indices)[0]
+
+    # 过滤数据
+    trainset.data = trainset.data[indices]
+    trainset.targets = trainset.targets[indices]
+
+    return trainset
+
+def remove_classes_svhn(trainset, to_keep):
+    trainset = copy.deepcopy(trainset)
+
+    # SVHN 的 labels 是 NumPy 数组
+    trainset.labels = np.array(trainset.labels)
+
+    # 找到需要保留的类别索引
+    indices = np.isin(trainset.labels, to_keep)
+    indices = np.nonzero(indices)[0]
+
+    # 过滤数据
+    trainset.data = trainset.data[indices]
+    trainset.labels = trainset.labels[indices]
+
+    return trainset
+
 def check_integrity(fpath, md5):
     if not os.path.isfile(fpath):
         return False
