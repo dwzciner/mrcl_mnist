@@ -4,7 +4,7 @@ from torchvision import datasets, transforms
 import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
-
+from torch.utils.data import DataLoader, TensorDataset
 import datasets.datasetfactory as df
 import datasets.task_sampler as ts
 import configs.classification.class_parser as class_parser
@@ -15,6 +15,37 @@ from model.meta_learner import MetaLearingClassification
 
 logger = logging.getLogger('experiment')
 
+# 筛选数据集，每类保留 num_per_class 张图片，返回 MNIST 类型
+def filter_mnist(dataset, num_per_class=20):
+    data = dataset.data
+    targets = dataset.targets
+    selected_data = []
+    selected_labels = []
+    class_count = {i: 0 for i in range(10)}
+
+    for i in range(len(targets)):
+        label = targets[i].item()
+        if class_count[label] < num_per_class:
+            selected_data.append(data[i])
+            selected_labels.append(label)
+            class_count[label] += 1
+        if all(count == num_per_class for count in class_count.values()):
+            break  # 每类达到 num_per_class 张后停止
+
+    # 转换为 Tensor 并创建新的 MNIST 数据集
+    selected_data = torch.stack(selected_data)
+    selected_labels = torch.tensor(selected_labels)
+
+    new_dataset = datasets.MNIST(
+        root=dataset.root,
+        train=dataset.train,
+        transform=dataset.transform,
+        target_transform=dataset.target_transform,
+    )
+    new_dataset.data = selected_data
+    new_dataset.targets = selected_labels
+
+    return new_dataset
 
 def main():
     p = class_parser.Parser()
@@ -41,9 +72,13 @@ def main():
     # dataset_test = df.DatasetFactory.get_dataset(args['dataset'], background=True, train=False, path=args["path"],
     #                                              all=True)
 
-    # 加载 MNIST
+    # 加载 MNIST 数据集
     mnist_train = datasets.MNIST(root="./data", train=True, download=True, transform=transforms.ToTensor())
     mnist_test = datasets.MNIST(root="./data", train=False, download=True, transform=transforms.ToTensor())
+
+    # 过滤数据，每类保留 10 张
+    mnist_train = filter_mnist(mnist_train, num_per_class=20)
+    mnist_test = filter_mnist(mnist_test, num_per_class=20)
 
     # Iterators used for evaluation
     iterator_test = torch.utils.data.DataLoader(mnist_test, batch_size=5,
