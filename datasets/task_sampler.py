@@ -17,6 +17,8 @@ class SamplerFactory:
             return OmniglotSampler(tasks, trainset, testset)
         elif "mnist" == dataset:
             return MNISTSampler(tasks, trainset, testset)
+        elif "svhn" == dataset:
+            return SVHNSampler(tasks, trainset, testset)
         elif "Sin" == dataset:
             return SineSampler(tasks, capacity=capacity)
         elif "SinBaseline" in dataset:
